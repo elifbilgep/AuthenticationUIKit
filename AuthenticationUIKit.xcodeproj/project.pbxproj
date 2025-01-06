@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		6AE589462D2AB5F400D8E1B1 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 6AE589452D2AB5F400D8E1B1 /* Alamofire */; };
+		6AE5894F2D2ADECE00D8E1B1 /* KeychainSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 6AE5894E2D2ADECE00D8E1B1 /* KeychainSwift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		6A375A9D2D29AF8600A09217 /* AuthenticationUIKit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AuthenticationUIKit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -36,6 +41,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6AE5894F2D2ADECE00D8E1B1 /* KeychainSwift in Frameworks */,
+				6AE589462D2AB5F400D8E1B1 /* Alamofire in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +85,8 @@
 			);
 			name = AuthenticationUIKit;
 			packageProductDependencies = (
+				6AE589452D2AB5F400D8E1B1 /* Alamofire */,
+				6AE5894E2D2ADECE00D8E1B1 /* KeychainSwift */,
 			);
 			productName = AuthenticationUIKit;
 			productReference = 6A375A9D2D29AF8600A09217 /* AuthenticationUIKit.app */;
@@ -107,6 +116,10 @@
 			);
 			mainGroup = 6A375A942D29AF8600A09217;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				6AE589442D2AB5F400D8E1B1 /* XCRemoteSwiftPackageReference "Alamofire" */,
+				6AE5894D2D2ADECE00D8E1B1 /* XCRemoteSwiftPackageReference "keychain-swift" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 6A375A9E2D29AF8600A09217 /* Products */;
 			projectDirPath = "";
@@ -150,7 +163,6 @@
 				INFOPLIST_FILE = AuthenticationUIKit/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -178,7 +190,6 @@
 				INFOPLIST_FILE = AuthenticationUIKit/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -335,6 +346,38 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		6AE589442D2AB5F400D8E1B1 /* XCRemoteSwiftPackageReference "Alamofire" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Alamofire/Alamofire";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.10.2;
+			};
+		};
+		6AE5894D2D2ADECE00D8E1B1 /* XCRemoteSwiftPackageReference "keychain-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/evgenyneu/keychain-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 24.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		6AE589452D2AB5F400D8E1B1 /* Alamofire */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6AE589442D2AB5F400D8E1B1 /* XCRemoteSwiftPackageReference "Alamofire" */;
+			productName = Alamofire;
+		};
+		6AE5894E2D2ADECE00D8E1B1 /* KeychainSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6AE5894D2D2ADECE00D8E1B1 /* XCRemoteSwiftPackageReference "keychain-swift" */;
+			productName = KeychainSwift;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 6A375A952D29AF8600A09217 /* Project object */;
 }
