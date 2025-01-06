@@ -31,6 +31,9 @@ final class NetworkService {
     private let baseURL = "http://localhost:3000"
     private let appManager = AppManager.shared
     private let userDefaultsManager = UserDefaultsManager.shared
+    private var isRefreshingToken = false
+    private var refreshTask: Task<String, Error>?
+    
     
     // Prevent creating multiple instances
     private init() {}
@@ -60,44 +63,60 @@ final class NetworkService {
         return headers
     }
     
-    //MARK: Refreh token
-    /// Attempts to refresh the authentication token
+    // MARK: Refresh token
     private func refreshToken() async throws -> String {
-        // Get stored user email for token refresh
-        guard let userEmail = userDefaultsManager.get(String.self, forKey: .userEmail) else {
-            throw NetworkError.tokenRefreshFailed
+        if let existingTask = refreshTask {
+            return try await existingTask.value
         }
         
-        let parameters: Parameters = ["email": userEmail]
-        
-        // Make refresh token request
-        let response: ApiResponse<TokenResponse> = try await request(
-            endpoint: .refreshToken,
-            method: .post,
-            parameters: parameters,
-            headers: createHeaders(defaultHeaders: ["Content-Type": "application/json"]),
-            requiresAuthentication: false
-        )
-        
-        // Handle the refresh token response
-        if let newToken = response.data?.token {
+        let task = Task<String, Error> { [weak self] in
+            guard let self = self else {
+                throw NetworkError.tokenRefreshFailed
+            }
+            
+            guard let userEmail = userDefaultsManager.get(String.self, forKey: .userEmail) else {
+                throw NetworkError.tokenRefreshFailed
+            }
+            
+            let parameters: Parameters = ["email": userEmail]
+            
+            let response: ApiResponse<TokenResponse> = try await self.performRequest(
+                endpoint: .refreshToken,
+                method: .post,
+                parameters: parameters,
+                headers: createHeaders(defaultHeaders: ["Content-Type": "application/json"]),
+                requiresAuthentication: false,
+                isRefreshAttempt: true
+            )
+            
+            guard let newToken = response.data?.token else {
+                throw NetworkError.tokenRefreshFailed
+            }
+            
             appManager.login(with: newToken)
             return newToken
         }
         
-        throw NetworkError.tokenRefreshFailed
+        refreshTask = task
+        
+        do {
+            let token = try await task.value
+            refreshTask = nil
+            return token
+        } catch {
+            refreshTask = nil
+            throw error
+        }
     }
     
-    // MARK: - Main Request Method
-    
-    /// Generic request method that handles all API calls
-    // MARK: - Main Request Method
-    func request<T: Codable>(
+    //MARK: perform request
+    private func performRequest<T: Codable>(
         endpoint: AuthEndpoint,
         method: HTTPMethod = .get,
         parameters: Parameters? = nil,
         headers: HTTPHeaders? = nil,
-        requiresAuthentication: Bool = true
+        requiresAuthentication: Bool = true,
+        isRefreshAttempt: Bool = false
     ) async throws -> T {
         guard let url = buildURL(for: endpoint) else {
             throw NetworkError.invalidURL
@@ -110,13 +129,6 @@ final class NetworkService {
             return createHeaders(defaultHeaders: headers)
         }()
         
-        // Debug için log
-        print("🔍 Request URL: \(url.absoluteString)")
-        print("🔍 Headers: \(initialHeaders)")
-        if let parameters = parameters {
-            print("🔍 Parameters: \(parameters)")
-        }
-        
         return try await withCheckedThrowingContinuation { continuation in
             AF.request(
                 url,
@@ -125,62 +137,58 @@ final class NetworkService {
                 encoding: JSONEncoding.default,
                 headers: initialHeaders
             )
-            .validate(statusCode: 200...299)  // 2xx başarılı yanıtları kabul et
-            .responseDecodable(of: T.self) { [weak self] response in
-                guard let self = self else { return }
-                
-                print("📥 Response Status: \(String(describing: response.response?.statusCode))")
-                if let statusCode = response.response?.statusCode {
-                    switch statusCode {
-                    case 401...403:  // Token expired
-                        Task {
-                            do {
-                                let newToken = try await self.refreshToken()
-                                let retryHeaders = self.createHeaders(
-                                    defaultHeaders: headers,
-                                    token: newToken
-                                )
-                                
-                                let retryResponse: T = try await self.request(
-                                    endpoint: endpoint,
-                                    method: method,
-                                    parameters: parameters,
-                                    headers: retryHeaders
-                                )
-                                continuation.resume(returning: retryResponse)
-                            } catch {
-                                print("🚨 Token refresh failed: \(error)")
-                                self.appManager.logOut()
-                                continuation.resume(throwing: error)
-                            }
-                        }
-                        
-                    case 200...299:
-                        switch response.result {
-                        case .success(let data):
-                            if let jsonData = response.data {
-                                print("📦 Response JSON:", String(data: jsonData, encoding: .utf8) ?? "")
-                            }
-                            continuation.resume(returning: data)
-                        
-                        case .failure(let error):
-                            print("🚨 Request failed: \(error)")
-                            continuation.resume(throwing: error)
-                        }
-                        
-                    default:
-                        if let error = response.error {
-                            print("🚨 Network error: \(error)")
-                            continuation.resume(throwing: error)
-                        } else {
-                            continuation.resume(throwing: NetworkError.invalidData)
-                        }
-                    }
-                } else {
-                    print("🚨 No status code in response")
-                    continuation.resume(throwing: NetworkError.invalidData)
+            .validate(statusCode: 200...299)
+            .responseDecodable(of: T.self) { response in
+                switch response.result {
+                case .success(let data):
+                    continuation.resume(returning: data)
+                case .failure(let error):
+                    continuation.resume(throwing: error)
                 }
             }
+        }
+    }
+    
+    //MARK: request
+    func request<T: Codable>(
+        endpoint: AuthEndpoint,
+        method: HTTPMethod = .get,
+        parameters: Parameters? = nil,
+        headers: HTTPHeaders? = nil,
+        requiresAuthentication: Bool = true
+    ) async throws -> T {
+        do {
+            return try await performRequest(
+                endpoint: endpoint,
+                method: method,
+                parameters: parameters,
+                headers: headers,
+                requiresAuthentication: requiresAuthentication
+            )
+        } catch {
+            if let afError = error.asAFError,
+               case .responseValidationFailed(reason: .unacceptableStatusCode(code: let statusCode)) = afError,
+               (401...403).contains(statusCode),
+               requiresAuthentication,
+               !isRefreshingToken {
+                
+                do {
+                    let newToken = try await refreshToken()
+                    let retryHeaders = createHeaders(defaultHeaders: headers, token: newToken)
+                    
+                    return try await performRequest(
+                        endpoint: endpoint,
+                        method: method,
+                        parameters: parameters,
+                        headers: retryHeaders,
+                        requiresAuthentication: true
+                    )
+                } catch {
+                    appManager.logOut()
+                    throw error
+                }
+            }
+            throw error
         }
     }
 }
