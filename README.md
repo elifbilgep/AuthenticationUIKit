@@ -1,9 +1,10 @@
 # Authentication UIKit
 
-A modern iOS authentication application built with UIKit, showcasing clean architecture and best practices in iOS development.
+A modern iOS authentication application built with UIKit, showcasing clean architecture and best practices in iOS development. This project includes both the iOS client and a custom-built Node.js/Express authentication service ([Authentication Service Repository](https://github.com/elifbilgep/BasicNodeJsAndExpressAuthService)) to provide a complete end-to-end authentication solution.
 
 ## Features
 
+- Complete authentication system with custom Node.js/Express backend
 - User Registration and Login
 - Profile Management
 - Users List View
@@ -109,11 +110,8 @@ The application includes comprehensive error handling for:
 
 ## Future Improvements
 
-- Implement biometric authentication
 - Add unit and UI tests
 - Enhance error handling
-- Add offline support
 - Implement push notifications
 - Add user search functionality
 - Enhance profile management features
-
